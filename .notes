@@ -1,0 +1,16 @@
+python3 -m venv <name of env>
+source .venv/bin/activate
+python3 -m pip install pip --upgrade
+python3 -m pip install Django
+django-admin startproject <mysite> .
+cd <mysite>
+python3 manage.py startapp <myapp>
+# add myapp to INSTALLED_APPS list in <mysite>/setting.py
+
+# {% <tag> %} template tag
+
+# create models in <myapp>/models.py
+python manage.py makemigrations
+python manage.py migrate
+python3 manage.py runserver
+deactivate

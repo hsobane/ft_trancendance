@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="chat-container">
+    <!-- Chat rooms list -->
+    <div class="chat-rooms">
+        <h2>Chat Rooms</h2>
+        <ul>
+            {% for room in rooms %}
+                <li class="room-item">
+                    <a class="room-link" href="{% url 'select_room' room.id %}">
+                        Chat with {% url 'select_room' room.id %}
+                        {% if room.user1 == user %}
+                            {{ room.user2 }}
+                        {% else %}
+                            
+                        
+                        {% endif %}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Chat messages -->
+    <div class="chat-messages">
+        <h2>Messages</h2>
+        <div class="message-container">
+            {% for message in messages %}
+                <div class="message {% if message.sender == user %}sent{% else %}received{% endif %}">
+                    <strong>{{ message.sender }}:</strong> {{ message.content }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Message input form -->
+        <form class="message-form" method="post" action="{% url 'list_chat' %}">
+            {% csrf_token %}
+            <input type="text" name="message" placeholder="Type your message..." required>
+            <button type="submit" name="send" value="{{ rooms.0.id }}">Send</button>
+        </form>
+    </div>
+</div>
+<script>
+    const socketurl = 'ws://{{ request.get_host }}/ws/chat/{{ rooms.0.id }}/';
+    const socket = new WebSocket(socketurl);
+
+    <!-- 'Receive message from the server' -->
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const messageContainer = document.querySelector('.message-container');
+        const message = document.createElement('div');
+        message.className = `message ${data.sender === '{{ user }}' ? 'sent' : 'received'}`;
+        message.innerHTML = `<strong>${data.sender}:</strong> ${data.content}`;
+        messageContainer.appendChild(message);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+        console.log('Message received:', data.content);
+        console.log('Sender:', data.sender);
+        console.log('Room:', data.room);
+        console.log('_________________________');
+    };
+
+    <!-- 'Send message to the server' -->
+    document.querySelector('.message-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const messageInput = document.querySelector('.message-form input[name="message"]');
+        const message = messageInput.value;
+        console.log('_Message_:', message);
+        socket.send(JSON.stringify({
+            'content': message,
+            'sender_pk': '{{ user.id }}',
+            'room_pk': '{{ rooms.0.id }}'
+        }));
+        console.log('Message sent:', message);
+        console.log('Sender:', '{{ user }}');
+        console.log('Room:', '{{ rooms.0.id }}');
+        console.log('_________________________');
+        messageInput.value = '';
+    });
+
+    <!-- 'Close the connection' -->
+    window.onbeforeunload = function() {
+        socket.close();
+    };
+
+    <!-- 'Scroll to the bottom of the message container' -->
+    const messageContainer = document.querySelector('.message-container');
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+
+</script>
+{% endblock content %}

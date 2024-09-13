@@ -1,0 +1,10 @@
+npx create-react-app <app-name>
+cd <app-name>
+npm build
+inside Django project, settings.py:
+    set STATICFILES_DIRS = [os.path.join(BASE_DIR, 'build/static')]
+    set TEMPLATES = [{'DIRS': [os.path.join(BASE_DIR, 'build')]}]
+    set STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+    set STATIC_URL = '/static/'
+    set MEDIA_URL = '/media/'
+    set MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
