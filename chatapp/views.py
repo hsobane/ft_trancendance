@@ -6,6 +6,9 @@ from django.db import models
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login
 
 # Create your views here.
 
@@ -17,7 +20,6 @@ def select_room(request, room_pk):
 @login_required
 def list_chat(request):
     room_pk = request.session.get('room_pk')
-    context = {}
     chat_rooms = ChatRoom.objects.filter(
         (models.Q(user1=request.user) | models.Q(user2=request.user))
     ).order_by('modified_at')
@@ -30,14 +32,29 @@ def list_chat(request):
                 (models.Q(user1=request.user) | models.Q(user2=request.user))
             ).order_by('modified_at').first()
             messages = Message.objects.filter(chat_room=room).order_by('created_at')
-    context['rooms'] = chat_rooms
-    context['messages'] = messages
-    context['title'] = 'Chat'
-    return render(request, 'chat.html', context) 
+    context = {
+        'rooms': chat_rooms,
+        'messages': messages,
+        'title': 'Chat',
+        'user': {
+            'id': request.user.id,
+            'username': request.user.username,
+            'email': request.user.email,
+        },
+        'session': dict(request.session.items()),
+        'cookies': request.COOKIES,
+    }
+    return JsonResponse(context)
 
-@login_required
-def logout_view(request):
+@csrf_exempt
+def login_view(request):
     if request.method == 'POST':
-        logout(request)
-        return redirect('login')  # Redirect to login page after logout
-    return render(request, 'logout.html')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'failed'})
+    return JsonResponse({'status': 'failed'})

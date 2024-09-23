@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_pk']
+        self.room_name = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = f'chat_room_{self.room_name}'
 
         # Join room group
@@ -31,8 +31,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json.get('content')
-        sender = text_data_json.get('sender_pk')
-        room_pk = text_data_json.get('room_pk')
+        sender = text_data_json.get('sender')
+        room_pk = text_data_json.get('room_id')
 
         try:
             # Save message to database
@@ -46,10 +46,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
-                    'type': 'chat_message',
+                    'type': 'MESSAGE',
                     'content': message,
-                    'sender_pk': sender,
-                    'room_pk': room_pk
+                    'sender': sender,
+                    'room_id': room_pk
                 }
             )
         except ObjectDoesNotExist as e:
@@ -58,8 +58,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # Receive message from room group
     async def chat_message(self, event):
         message = event['content']
-        sender = event['sender_pk']
-        room_pk = event['room_pk']
+        sender = event['sender']
+        room_pk = event['room_id']
 
         user = await database_sync_to_async(User.objects.get)(pk=sender)
         # Send message to WebSocket
