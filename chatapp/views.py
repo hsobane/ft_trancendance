@@ -1,60 +1,62 @@
-from django.shortcuts import render
-from .models import ChatRoom, Message
-from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
-from django.db import models
-from django.contrib.auth import logout
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import redirect
-from django.utils import timezone
-from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth import authenticate, login
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from .models import ChatRoom, Message
+from .serializers import UserSerializer, ChatRoomSerializer, MessageSerializer
+from django.db import models
 
-# Create your views here.
-
-@login_required
-def select_room(request, room_pk):
-    request.session['room_pk'] = room_pk
-    return redirect('list_chat')
-
-@login_required
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_chat(request):
-    room_pk = request.session.get('room_pk')
     chat_rooms = ChatRoom.objects.filter(
         (models.Q(user1=request.user) | models.Q(user2=request.user))
     ).order_by('modified_at')
-    messages = []
-    if chat_rooms:
-        if room_pk:
-            messages = Message.objects.filter(chat_room=room_pk).order_by('created_at')
+    contacts = []
+    for room in chat_rooms:
+        if room.user1 != request.user:
+            contacts.append(UserSerializer(room.user1).data)
         else:
-            room = ChatRoom.objects.filter(
-                (models.Q(user1=request.user) | models.Q(user2=request.user))
-            ).order_by('modified_at').first()
-            messages = Message.objects.filter(chat_room=room).order_by('created_at')
+            contacts.append(UserSerializer(room.user2).data)
     context = {
-        'rooms': chat_rooms,
-        'messages': messages,
-        'title': 'Chat',
-        'user': {
-            'id': request.user.id,
-            'username': request.user.username,
-            'email': request.user.email,
-        },
-        'session': dict(request.session.items()),
-        'cookies': request.COOKIES,
+        'chat_rooms': ChatRoomSerializer(chat_rooms, many=True).data,
+        'user': UserSerializer(request.user).data,
+        'contacts': contacts,
+        # 'session': dict(request.session.items()),
+        # 'cookies': request.COOKIES,
     }
-    return JsonResponse(context)
+    return Response(context)
 
 @csrf_exempt
+@api_view(['POST'])
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = request.data.get('username')
+        password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return JsonResponse({'status': 'success'})
+            user_data = UserSerializer(user).data
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'status': 'success',
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': user_data,
+            })
         else:
-            return JsonResponse({'status': 'failed'})
-    return JsonResponse({'status': 'failed'})
+            return Response({'status': 'failed', 'error': 'Invalid username or password'})
+    return Response({'status': 'failed', 'error': 'Invalid request method'})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    if request.method == 'POST':
+        logout(request)
+        return Response({'status': 'logged out'})
+    return Response({'status': 'failed'})
+

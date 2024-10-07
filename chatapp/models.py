@@ -2,6 +2,7 @@ from django.db import models
 
 # Create your models here.
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class ChatRoom(models.Model):
     user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_room_user1")
@@ -21,9 +22,15 @@ class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_message")
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['created_at']
 
     def get_messages(self):
         return self.objects.all().order_by('created_at')
+    
+    def save(self, *args, **kwargs):
+        self.chat_room.modified_at = timezone.now()
+        self.chat_room.save()
+        super().save(*args, **kwargs)

@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'corsheaders',
+    'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,7 +43,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'chatapp',
     'rest_framework',
+    'rest_framework_simplejwt',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
 
 ASGI_APPLICATION = 'chat_project.asgi.application'
 
@@ -57,9 +65,26 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Security settings
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SECURE_BROWSER_XSS_FILTER = True
+# X_FRAME_OPTIONS = 'DENY'
+
+# # Additional recommended security settings
+# SECURE_SSL_REDIRECT = True  # Redirect all non-HTTPS requests to HTTPS
+# SESSION_COOKIE_SECURE = True  # Use secure cookies
+# CSRF_COOKIE_SECURE = True  # Use secure CSRF cookies
+
+# # Path to the SSL certificate and key files
+# SSL_CERTIFICATE = os.path.join(BASE_DIR, 'ssl', 'localhost.crt')
+# SSL_KEY = os.path.join(BASE_DIR, 'ssl', 'localhost.key')
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
+
+# CORS_ALLOW_ALL_ORIGINS = True  # For development only
+# CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'chat_project.urls'
 
@@ -83,7 +108,10 @@ WSGI_APPLICATION = 'chat_project.wsgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
     }
 }
 
@@ -152,7 +180,7 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 
 # session expire after 20 seconds
-SESSION_COOKIE_AGE = 20
+# SESSION_COOKIE_AGE = 20
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
