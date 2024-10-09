@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ContactItem from './ContactItem';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
 
 function Sidebar({ setupChatRoom, setupSocket, data, allUsers, unreadMessages }) {
 	const [search, setSearch] = useState('');
@@ -116,7 +118,14 @@ function Sidebar({ setupChatRoom, setupSocket, data, allUsers, unreadMessages })
                     <div className="search-results">
                         {matchedUsers.map((user, index) => (
                             <div key={index} className="search-result-item" onClick={() => handleSelectUser(user)}>
-                                {user.username}
+                                {user.avatar ? (
+                                    <img src={user.avatar} alt={user.username} className="search-result-avatar" />
+                                ) : (
+                                    <div className="search-result-avatar default-avatar">
+                                        <FontAwesomeIcon icon={faUser} />
+                                    </div>
+                                )}
+                                <span className="search-result-username">{user.username}</span>
                             </div>
                         ))}
                     </div>

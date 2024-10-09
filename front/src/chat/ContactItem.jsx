@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
 
 function ContactItem({ contact, currentUser, onClick, unreadMessages }) {
     const otherUser = contact.user1.id === currentUser.id ? contact.user2 : contact.user1;
@@ -7,8 +9,14 @@ function ContactItem({ contact, currentUser, onClick, unreadMessages }) {
     return (
         <div className="contact" onClick={onClick}>
             <div className="contact-info">
-                <div className="contact-avatar-container">
-                    {otherUser.avatar}
+            <div className="contact-avatar-container">
+                    {otherUser.avatar ? (
+                        <img src={otherUser.avatar} alt={otherUser.username} className="contact-avatar" />
+                    ) : (
+                        <div className="contact-avatar default-avatar">
+                            <FontAwesomeIcon icon={faUser} />
+                        </div>
+                    )}
                 </div>
                 <div className="contact-details">
                     <span className="contact-name">{otherUser.username}</span>

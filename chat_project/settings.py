@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'corsheaders',
-    'django_extensions',
+    # 'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -66,9 +66,9 @@ MIDDLEWARE = [
 ]
 
 # Security settings
-# SECURE_CONTENT_TYPE_NOSNIFF = True
-# SECURE_BROWSER_XSS_FILTER = True
-# X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
 
 # # Additional recommended security settings
 # SECURE_SSL_REDIRECT = True  # Redirect all non-HTTPS requests to HTTPS
@@ -76,8 +76,8 @@ MIDDLEWARE = [
 # CSRF_COOKIE_SECURE = True  # Use secure CSRF cookies
 
 # # Path to the SSL certificate and key files
-# SSL_CERTIFICATE = os.path.join(BASE_DIR, 'ssl', 'localhost.crt')
-# SSL_KEY = os.path.join(BASE_DIR, 'ssl', 'localhost.key')
+SSL_CERTIFICATE = os.path.join(BASE_DIR, 'ssl', 'localhost.crt')
+SSL_KEY = os.path.join(BASE_DIR, 'ssl', 'localhost.key')
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -108,10 +108,7 @@ WSGI_APPLICATION = 'chat_project.wsgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
     }
 }
 
